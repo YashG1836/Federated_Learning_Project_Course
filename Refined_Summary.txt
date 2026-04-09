@@ -1,0 +1,82 @@
+Project Report: Fairness in Federated Learning via Dynamic Client-Adaptive Weighting
+
+1. Project Overview and Objective
+
+This four-month project, conducted under the guidance of Prof. Manisha Padala, explores the intersection of Federated Learning (FL) and machine learning fairness. The primary objective was to improve fairness in gender classification models trained via FL. Specifically, the goal was to reduce the accuracy disparity across different racial demographic groups while maintaining or improving the model's overall accuracy.
+
+2. Datasets Utilized
+
+The project was structured across three datasets to validate different phases of the research:
+
+- MNIST:
+  Used initially to understand core FL concepts (IID vs. Non-IID data distribution) and to test basic attack and defense mechanisms.
+
+- UTKFace (~23,000 images):
+  The primary dataset used for fairness analysis, as it contains facial images labeled with both gender and race.
+
+- FairFace (50,000 images used):
+  Used for final validation to ensure the proposed methods generalize well, chosen for its balanced representation of race and gender.
+
+3. Project Methodology and Evolution
+
+Phase 1: Foundational FL and Vulnerability Testing (MNIST)
+
+The first month was dedicated to building a baseline FL pipeline using a CNN. To understand FL vulnerabilities, a targeted label-flipping attack was implemented where a malicious client flipped "Class 1" labels to "Class 7".
+
+The experiment demonstrated that even a single poisoned client could completely destroy the model's ability to recognize a specific class (dropping class-1 accuracy to 0%), proving the vulnerability of FL systems.
+
+Phase 2: Identifying Fairness Issues (Baseline UTKFace Experiments)
+
+Transitioning to the UTKFace dataset, a clean FL baseline was established using 10 clients over 8 federated rounds.
+
+Baseline Results:
+The model achieved an overall accuracy of ~0.873. However, race-wise accuracy revealed a significant disparity gap of ~8.5%. The accuracy for White and Black groups was high (0.903 and 0.919, respectively), while the Asian group suffered the lowest accuracy at 0.834.
+
+Fairness Metrics:
+Statistical Parity Difference (SPD) and Equalized Odds Difference (EOD) metrics confirmed systematic demographic bias. When malicious label-flipping clients were introduced, these fairness metrics degraded severely, indicating that adversarial attacks disproportionately harm minority or weaker demographic groups.
+
+Phase 3: Exploring Fairness Interventions
+
+To reduce the ~8.5% fairness gap, several methods were implemented and evaluated:
+
+- Method 1: Global Static Weighted Cross-Entropy  
+  Applying static weights based on dataset statistics proved ineffective and provided a weak fairness signal.
+
+- Method 2: Fairness Regularization  
+  Introduced a penalty term to minimize the difference between group-wise losses. While principled, it dropped overall accuracy and resulted in a fairness gap of 0.1013.
+
+- Method 3: Adversarial Fairness Learning  
+  Involved training a predictor to classify gender while an adversary attempted to predict race, forcing the model to learn race-invariant features. This reduced the fairness gap to 0.0736 but slightly decreased overall accuracy.
+
+- Method 4: Attack-Based Approach  
+  Attempting to use adversarial client behavior to reduce bias failed, worsening the fairness gap to 0.1064. Attacks get diluted during the Federated Averaging process and do not directly help weaker groups.
+
+4. Proposed Solution: Dynamic Client-Adaptive Fairness Weighting (DCA-FW)
+
+The most successful approach was DCA-FW. In this method, a fraction of the clients (e.g., 30%) act as "fairness clients".
+
+Mechanism:
+These clients compute their own local race-wise accuracy and dynamically update their cross-entropy loss weights every round. Groups with lower baseline accuracy receive higher gradient weights, forcing the model to prioritize learning for underperforming demographics.
+
+Results on UTKFace:
+DCA-FW reduced the race-wise fairness gap to 0.0507 (down from 0.0852) while maintaining stable overall accuracy.
+
+5. Final Validation (FairFace Dataset)
+
+To ensure that the DCA-FW method is robust and dataset-agnostic, it was tested on 50,000 images from the FairFace dataset.
+
+- Baseline FL model:
+  Accuracy = 0.7723  
+  Fairness gap = 0.0992  
+
+- With DCA-FW:
+  Fairness gap progressively reduced to 0.088 → 0.0858 → 0.0812  
+  Accuracy remained stable between ~76.9% and 77.9%
+
+6. Final Conclusion
+
+This project demonstrates that standard FL models inherently exhibit significant race-wise fairness disparities, which are further amplified by adversarial attacks.
+
+Traditional fairness techniques (such as static weighting or regularization) often fail or dilute in decentralized settings. In contrast, client-level adaptations are highly effective.
+
+Dynamic Client-Adaptive Fairness Weighting (DCA-FW) proves to be a highly successful intervention by directly targeting underperforming demographic groups and achieving an optimal balance between fairness improvement and overall model accuracy.

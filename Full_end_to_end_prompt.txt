@@ -1,0 +1,501 @@
+Project Overview: Fairness in Federated Learning
+Introduction
+This project was carried out over a period of four months under the guidance of Prof. Manisha Padala. The primary focus of the project was to explore Federated Learning (FL) and extend its application toward improving fairness in machine learning models, particularly in sensitive tasks such as gender classification.
+The project involved weekly meetings, during which incremental goals and tasks were assigned. Over time, the direction of the project evolved from understanding Federated Learning fundamentals to addressing fairness-related challenges within FL systems.
+Project Objective
+The main objective of this project is:
+To improve fairness in gender classification using Federated Learning.
+More specifically:
+Reduce the accuracy disparity across different racial groups Maintain or improve overall model accuracy 3. Datasets Used
+The project was developed and validated using the following datasets:
+MNIST Dataset Used in the initial phase to understand and implement basic Federated Learning concepts, including attacks and defenses. Exact things I did using MNIST: It helped me learn FL and how things work, IID non IID, i tried trining a model on MNIST distributing the dataset among the clients both ways IID and NOn IID , then calcuted Gloabal accuracies , client wise things , then mam told me to implement some attack and see if the label flipping attack is wprking or not what exaclt my code did was : FL System:
+5 clients, each trained on non-IID partitions (2 digits per client).
+Each round:
+Clients train 1 epoch locally.
+Global server aggregates models using FedAvg.
+Model: CNN on MNIST.
+Evaluation: Global accuracy + class-1 accuracy after every round.
+🔍 Case 1: All Clients Clean
+Client 0 holds digits [0, 1] → it’s the only one with class 1.
+Since this client is training normally (no flipping), its updates help the global model learn what class 1 actually looks like.
+Even though only one client has class 1, repeated contributions of its local updates gradually reinforce the global model’s ability to predict class 1 correctly.
+❓ Why does class 1 accuracy keep increasing each round?
+Because the global model is being repeatedly updated with correct signals from client 0's class 1 data.
+Early on, the model doesn’t know class 1, so it performs poorly on it.
+After several rounds, the cumulative effect of client 0’s updates allows the global model to build a strong representation for class 1.
+That’s why you saw class-1 accuracy rise to ~98%, while global accuracy was around ~73% (the average over all classes, some of which were undertrained due to non-IID splits).
+✅ Expected Behavior. Your result is correct.
+🚨 Case 2: 1 Malicious Client (Label-Flipping 1 → 7)
+Again, only Client 0 has class 1 — but now it's flipping labels to make them look like class 7.
+So when the global model receives Client 0's updates, it learns to map class-1 features to class 7 output.
+Result: Model never learns the correct mapping for class 1.
+Since no other client has class 1, there is no clean counter-signal to correct it.
+❌ Why is Class 1 Accuracy 0%?
+Because the global model predicts something else (likely class 7) every time it sees a real class-1 digit during testing.
+The model was trained to believe that class 1 “looks like” class 7 — a targeted label-flipping attack.
+✅ Expected Behavior. This shows the power of even one poisoned client
+UTKFace Dataset Used as the primary dataset for experimentation and development of fairness-based methods. It contains facial images labeled with gender and race, making it suitable for fairness analysis. FairFace Dataset Used for final evaluation and validation of the proposed method due to its balanced representation of race and gender. 4. Project Evolution and Methodology 4.1 Initial Phase: Understanding Federated Learning (Month 1)
+In the first month, the focus was on:
+Learning the fundamentals of Federated Learning Studying research papers related to FL, including attacks and defenses Implementing basic FL pipelines on the MNIST dataset Experimenting with: Simple client-server FL setup A few attack and defense mechanisms
+This phase helped build a strong foundation in FL concepts and implementation.
+4.2 Transition to Fairness in FL
+After gaining familiarity with FL, discussions with the professor led to identifying a key problem:
+Federated Learning models may produce biased results across different demographic groups.
+This motivated the shift toward:
+Using FL to reduce bias and improve fairness Focusing on race-wise performance disparities in gender classification 4.3 Baseline Experiment on UTKFace
+The first step was to establish a baseline Federated Learning model on the UTKFace dataset:
+Task: Gender classification Setup: Standard FL training across multiple clients Evaluation metrics: Overall accuracy Race-wise accuracy Observation: A significant disparity (~9%) was observed between race-wise accuracies This confirmed the presence of fairness issues in the baseline FL model 4.4 Exploration of Fairness Improvement Methods
+Multiple approaches were implemented and evaluated to reduce the fairness gap:
+Methods that did NOT work effectively: Fairness Regularization Weighted Cross-Entropy Loss Other similar fairness-based modifications
+Outcome:
+Decrease in overall accuracy No significant improvement in fairness gap Method with Neutral Impact: Attack-based approach (bias reduction via adversarial client behavior)
+Outcome:
+Overall accuracy remained similar Fairness gap did not improve Methods that showed improvement: Adversarial Learning Slight reduction in fairness gap Minor decrease in overall accuracy
+Dynamic Client-Adaptive Fairness Weighting (DCA-FW) (Final Method)
+Key Idea:
+Dynamically adjust the contribution (weights) of clients during training Give more importance to clients contributing to fairness improvement
+Outcome:
+Fairness gap reduced significantly Overall accuracy maintained or slightly improved
+Exact things which i did along with results : Baseline things : Tried to trian global model (no FL) then same thing IID using FL, then implemented some attack in FL just to see
+Stage A – Dataset & Client Simulation
+Load UTKFace
+Preprocess images + gender labels
+Split dataset across N clients (IID first)
+Each client has its own local dataset
+Stage B – Clean Federated Learning (No Poisoning)
+CNN model for gender classification
+Federated training using FedAvg (baseline)
+Track:
+Global accuracy
+Per-client accuracy
+Fairness metrics
+Stage C – Malicious Clients (Task 2)
+Label-flipping or backdoor attacks
+Compare accuracy + fairness degradation
+🔹 Federated Learning Experiment: Summary (Statistical & Crisp)
+Conducted a Federated Learning (FL) experiment on the UTKFace dataset (~23,000 images) for gender classification.
+Dataset split into 80% training (~18,400 images) and 20% testing (~4,600–5,000 images).
+Training data was distributed across 10 clients, each holding approximately 1,840 images.
+Used a CNN-based Gender Classification model with identical architecture across all clients.
+Training was performed over 8 federated rounds, with 1 local epoch per client per round.
+Mini-batch training was used with batch size = 32, resulting in ~57 gradient updates per client per round.
+Model aggregation was done using Federated Averaging (FedAvg).
+Experiments were run on CUDA (GPU) for efficiency.
+Clean Federated Learning Results
+Accuracy improved steadily from 0.768 (Round 1) to ~0.873 (Round 8).
+Accuracy trend was smooth and stable, indicating healthy convergence.
+SPD ranged from −0.54 to −0.75, showing consistent demographic bias.
+EOD remained close to 0 (−0.15 to −0.03), indicating nearly equal accuracy across genders.
+Malicious Federated Learning Results
+Introduced 30% malicious clients performing a label-flipping data poisoning attack.
+Initial accuracy dropped sharply to 0.542 (Round 1).
+Accuracy showed high instability, fluctuating across rounds and ending at ~0.835.
+SPD fluctuated heavily (−0.12 to −0.68), indicating severe demographic imbalance.
+EOD reached extreme values (as low as −0.85), showing strong inequality in true positive rates.
+Despite partial recovery in accuracy, fairness metrics remained highly degraded.
+Key Insight
+Accuracy alone is insufficient to assess model robustness in FL.
+Fairness metrics (SPD, EOD) clearly expose the impact of malicious clients, even when accuracy appears acceptable.
+Summary of Race-wise Outcomes (Global FL Model)
+Accuracy
+In the clean FL setting, the global model achieves high gender classification accuracy across all races (≈0.84–0.92).
+Under malicious FL (label-flipping attack), accuracy drops consistently for every race, indicating that the attack is effective and uniformly degrades model performance.
+The drop is most pronounced for Asian and Black groups, showing higher vulnerability.
+Statistical Parity Difference (SPD)
+In clean FL, SPD is strongly negative across all races, indicating a systematic gender prediction bias (females predicted less frequently than males).
+Under malicious FL, the magnitude of SPD decreases for all races.
+This reduction does not indicate improved fairness; instead, it reflects noisier and less confident predictions caused by label flipping.
+Equalized Odds Difference (EOD)
+In clean FL, EOD values are close to zero for most races, suggesting relatively balanced error rates between genders.
+Under malicious FL, EOD becomes large and negative across all races, revealing severe error-rate unfairness, with female samples being disproportionately misclassified.
+The Asian and Black groups exhibit the largest EOD degradation, indicating greater susceptibility to fairness violations.
+Overall Insight
+While clean FL achieves strong accuracy, race-wise gender bias is already present.
+Malicious clients significantly amplify both accuracy loss and fairness violations, with error-rate bias (EOD) worsening more severely than prediction-rate bias (SPD) across all races.
+RACE-WISE GLOBAL MODEL PERFORMANCE
+Race | Acc(clean) Acc(mal) | SPD(clean) SPD(mal) | EOD(clean) EOD(mal)
+White | 0.903 0.716 | -0.809 -0.405 | -0.040 0.383Black | 0.919 0.769 | -0.839 -0.517 | -0.006 0.353Asian | 0.834 0.691 | -0.666 -0.426 | -0.023 0.388Indian | 0.908 0.768 | -0.824 -0.521 | -0.090 0.159Others | 0.879 0.723 | -0.733 -0.474 | -0.189 0.222
+Race Distribution: Full Dataset
+White : 10069 (42.49%) Black : 4526 (19.10%) Asian : 3433 (14.49%) Indian : 3975 (16.78%) Others : 1692 ( 7.14%) Total : 23695
+Race Distribution: Train Dataset
+White : 8094 (42.70%) Black : 3597 (18.98%) ... Malicious clients amplify these effects, particularly for races with weaker baseline representations, demonstrating the vulnerability of federated learning systems to fairness degradation under adversarial behavior.
+then following methods i tried on UTK which didnt worked , means reuslts not satisfying
+Fairness Improvement Plan (Federated Learning on UTKFace)
+Problem
+Current FL model shows race-wise accuracy disparity:
+White: 0.903
+Black: 0.919
+Asian: 0.834 (lowest)
+Indian: 0.908
+Others: 0.879
+Accuracy gap ≈ 8.5% between best and worst race groups.
+Goal: Reduce this gap while keeping overall accuracy ≈ 0.87–0.88.
+Idea
+Introduce fairness-aware clients (10–20%) in the federated setup:
+80–90% normal clients → train normally.
+10–20% fairness clients → modify training objective to improve underperforming groups.
+Fairness Client Strategy
+Fairness clients use a modified loss function:
+Loss=CrossEntropy+λ⋅FairnessPenalty
+Possible implementations:
+Race-weighted loss (simplest)
+Assign higher weights to underperforming races (e.g., Asian).
+Encourages model to learn better features for these groups.
+Group fairness regularization
+Penalize difference between highest and lowest race losses.
+Adversarial fairness (advanced)
+Train predictor to predict gender while preventing an adversary from predicting race.
+Encourages race-invariant representations.
+Expected Effect
+Improve accuracy for low-performing races (e.g., Asian).
+Maintain similar accuracy for other races.
+Reduce race accuracy gap (e.g., from ~8.5% → ~3–4%).
+Preserve overall model accuracy.
+Key Insight
+Instead of degrading high-performing groups, fairness-aware training raises the performance of weaker groups, improving equity in the global FL model.
+Intuition Behind Dynamic Weighted Cross-Entropy for Fairness
+In standard training, all samples contribute equally to the loss:
+L=CE(y, 
+y
+^
+​
+ )
+This means the model primarily learns patterns from groups that dominate the dataset or are easier to classify, often leading to higher accuracy for those groups and lower accuracy for minority or harder groups.
+Weighted Loss Mechanism
+Dynamic weighted cross-entropy modifies the loss as:
+L=w 
+r
+​
+ ⋅CE(y, 
+y
+^
+​
+ )
+where w 
+r
+​
+  is the weight assigned to samples belonging to race r.
+Groups with lower baseline accuracy receive higher weights.
+This increases the gradient contribution from those groups during training.
+Since model parameters are updated using gradients:
+θ 
+t+1
+​
+ =θ 
+t
+​
+ −η∇ 
+θ
+​
+ L
+a larger weight w 
+r
+​
+  means that errors from underperforming groups produce larger parameter updates.
+Effect on Learning
+As a result:
+The model gives more importance to reducing errors for low-performing groups.
+Minority or underperforming races have greater influence on the learned parameters.
+This often leads to improved accuracy for those groups, reducing the performance gap.
+Trade-off
+However, emphasizing underperforming groups may slightly shift the model away from the optimal solution for the majority groups. Therefore:
+Accuracy for high-performing groups may decrease slightly.
+Overall model accuracy may reduce marginally.
+Key Goal
+The objective is not to maximize raw accuracy but to balance performance across demographic groups, reducing disparities while keeping overall accuracy approximately stable.
+M-2: didnt worked
+Method 2: Fairness Regularization (Group Disparity Minimization)
+Definition
+Fairness Regularization introduces a penalty term in the loss function that discourages large performance differences between demographic groups.
+Instead of explicitly boosting minority groups, the model is trained to minimize disparity between the best and worst performing groups.
+Loss Function
+L=CE+λ(max 
+r
+​
+ L 
+r
+​
+ −min 
+r
+​
+ L 
+r
+​
+ )
+where:
+CE = standard cross entropy loss
+L 
+r
+​
+  = average loss for race r
+λ = fairness regularization strength
+Intuition
+If one group has significantly higher loss than others, the penalty increases, forcing the model to reduce this imbalance.
+Effect
+Directly reduces performance gap between groups
+Encourages balanced learning across demographic groups
+Advantage
+More principled fairness objective
+Works across datasets and protected attributes
+--------------------------------------------------------------------------------
+Device: cuda Valid images: 23695
+Running Baseline FL Round 1 completed Round 2 completed Round 3 completed Round 4 completed Round 5 completed Round 6 completed Round 7 completed Round 8 completed Round 9 completed Round 10 completed
+Baseline Race Accuracy White : 0.885 Black : 0.913 Asian : 0.829 Indian : 0.915 Others : 0.863 Baseline Gap: 0.0852
+Running Fairness Regularized FL Round 1 completed ... Asian : 0.813 Indian : 0.904 Others : 0.844 Fairness Gap: 0.1013
+m-3: better than others cuz the gap reduced but overall acc dropped a bit as well
+Method 3: Adversarial Fairness Learning
+Definition
+Adversarial Fairness Learning reduces demographic bias by training the model to make accurate predictions while preventing it from encoding information about sensitive attributes such as race.
+The model learns a representation that is useful for predicting the main task (gender) but uninformative for predicting the protected attribute (race).
+Architecture
+Two models are trained simultaneously:
+Predictor
+X→Y
+Predicts the main task (gender classification).
+Adversary
+h(X)→Z
+Attempts to predict the protected attribute (race) from the learned representation h(X).
+Training Objective
+min 
+predictor
+​
+ max 
+adversary
+​
+ 
+The predictor tries to:
+maximize gender prediction accuracy
+minimize the adversary's ability to predict race.
+Intuition
+If the adversary cannot recover race information, the learned representation becomes race-invariant, reducing bias.
+Effect
+Reduces dependence of predictions on sensitive attributes
+Encourages fairer representations across demographic groups
+Advantage
+Theoretically grounded fairness approach
+Applicable to many tasks and datasets
+--------------------------------------------------------------------------------
+Federated Adversarial Learning Results
+Device: CUDA
+Valid Images: 23,695
+Lamba Used : 0.3
+Rounds : 8
+🔄 Training Progress
+Round 1 completed
+Round 2 completed
+Round 3 completed
+Round 4 completed
+Round 5 completed
+Round 6 completed
+Round 7 completed
+Round 8 completed
+Race-wise Accuracy
+Race
+Accuracy
+White
+0.840
+Black
+0.875
+Asian
+0.802
+Indian
+0.875
+Others
+0.851
+Fairness Metric
+Gap: 0.0736
+m-4: The best amoong : Dynamic weighting clients
+Comparison of Fairness Methods in Federated Learning
+Method 1: Weighted Cross-Entropy (Global Static)
+Weights are computed once using dataset statistics.
+Same weights are used across all clients and all rounds.
+Does not adapt to model behavior.
+Assumes imbalance exists in data, not in learned representation.
+Fairness signal is weak and often ineffective.
+Key Idea: weights = function(dataset)
+--------------------------------------------------------------------------------
+Method 2: Fairness Regularization
+Adds a fairness penalty term to the loss.
+Tries to minimize difference between group-wise losses.
+Applied globally during training.
+Fairness signal is indirect and often diluted in FL aggregation.
+Does not explicitly target worst-performing group.
+Key Idea: loss = CE + λ * fairness_penalty
+--------------------------------------------------------------------------------
+Method 3: Adversarial Fairness Learning
+Introduces an adversary to predict race from features.
+Main model tries to prevent this (race-invariant representation).
+Targets representation bias instead of accuracy gap directly.
+More theoretically strong but difficult to stabilize in practice.
+Does not directly optimize race-wise accuracy gap.
+Key Idea: min (L_gender - λ L_race)
+--------------------------------------------------------------------------------
+Method 4: Dynamic Client-Adaptive Fairness Weighting (DCA-FW)
+Only a fraction (e.g., 30%) of clients are fairness-aware.
+Each fairness client computes its own local race-wise accuracy.
+Weights are dynamically updated every round based on performance.
+Different clients use different weights at the same time.
+Targets underperforming groups directly.
+Fully aligned with federated learning setting.
+Key Idea: weights_client_i = function(local_model_performance_i)
+--------------------------------------------------------------------------------
+🔥 Core Differences
+Static vs Dynamic
+Method 1:
+Fixed weights across all rounds.
+Method 4:
+Weights change every round and every client.
+--------------------------------------------------------------------------------
+Global vs Local
+Method 1:
+Global weighting (same everywhere).
+Method 4:
+Local weighting (client-specific).
+--------------------------------------------------------------------------------
+Dataset-based vs Performance-based
+Method 1:
+Based on dataset distribution.
+Method 4:
+Based on actual model performance.
+--------------------------------------------------------------------------------
+Adaptivity
+Method 1:
+No adaptation during training.
+Method 4:
+Fully adaptive across rounds and clients.
+--------------------------------------------------------------------------------
+Client Behavior
+Method 1:
+All fairness clients behave identically.
+Method 4:
+Each fairness client behaves differently.
+--------------------------------------------------------------------------------
+Gradient Impact
+Method 1:
+Same gradient scaling everywhere.
+Method 4:
+Different gradient directions from different clients.
+--------------------------------------------------------------------------------
+🔥 Final Insight
+Method 1 tries to correct data imbalance.
+Method 2 tries to enforce loss-level fairness.
+Method 3 tries to remove representation bias.
+Method 4 directly corrects model behavior dynamically in FL.
+--------------------------------------------------------------------------------
+🧠 One-Line Summary
+Method 1 → Static correction
+Method 2 → Penalty-based correction
+Method 3 → Representation-level correction
+Method 4 → Adaptive gradient-level correction (client-aware)
+Device: cuda Valid images: 23695 Fairness Clients: {2, 4, 6, 7} Round 1 completed Round 2 completed Round 3 completed Round 4 completed Round 5 completed Round 6 completed Round 7 completed Round 8 completed Round 9 completed Round 10 completed
+Race-wise Accuracy: White : 0.879 Black : 0.911 Asian : 0.86 Indian : 0.906 Others : 0.869
+Gap: 0.0507
+🧪 Federated Learning with Fair Clients
+Device: CUDA Valid Images: 23,695 Rounds: 8 Fairness Percentage : 30%
+⚖️ Fair Clients
+{8, 0, 7}
+--------------------------------------------------------------------------------
+🔄 Training Progress
+Round 1 completed
+Round 2 completed
+Round 3 completed
+Round 4 completed
+Round 5 completed
+Round 6 completed
+Round 7 completed
+Round 8 completed
+--------------------------------------------------------------------------------
+📊 Race-wise Accuracy
+Race
+Accuracy
+White
+0.879
+Black
+0.911
+Asian
+0.849
+Indian
+0.909
+Others
+0.884
+--------------------------------------------------------------------------------
+⚖️ Fairness Metric
+Gap: 0.0613
+last M-5: Only attacks to see if by simpley ignoring the overall accuracy , can i reduce the gap but still coudnt get good results
+--------------------------------------------------------------------------------
+⚖️ Comparison of Methods
+Method
+Gap
+Accuracy
+Behavior
+Baseline
+0.0852
+High
+Biased
+Adversarial
+0.0736
+Lower
+Slight improvement
+Attack-based
+0.1064
+High
+Failed
+Dynamic weighting
+0.0507
+Stable
+✅ Best
+--------------------------------------------------------------------------------
+🧠 Final Conclusions
+🔥 1. Attacks alone do NOT improve fairness
+They are diluted in FL
+Do not help weaker groups
+--------------------------------------------------------------------------------
+🔥 2. Adversarial learning helps, but limited
+Reduces bias indirectly
+Causes accuracy trade-off
+--------------------------------------------------------------------------------
+🔥 3. Dynamic weighting is most effective
+Directly targets imbalance
+Improves weakest groups
+Maintains overall accuracy
+--------------------------------------------------------------------------------
+❗ Why Attack Alone Did Not Reduce the Gap
+1️⃣ Federated Averaging cancels the attack
+Only 30–40% clients are attacking
+60–70% clients are clean
+👉 During aggregation:
+➡️ Clean updates dominate ➡️ Attack effect gets diluted
+--------------------------------------------------------------------------------
+2️⃣ Attack is local, fairness is global
+Each client attacks its own local data
+But fairness gap is measured on global test data
+➡️ So dominant race is not consistently degraded globally
+--------------------------------------------------------------------------------
+3️⃣ Model learns robust features anyway
+Gender prediction is relatively easy
+Even with:
+label flipping
+noise
+👉 CNN still learns strong facial patterns
+4.5 Validation on FairFace Dataset
+To verify the robustness of the proposed method:
+The DCA-FW method was applied to the FairFace dataset This dataset was chosen due to: Better racial balance Clear gender and race annotations Observation: The method successfully: Maintained/improved overall accuracy Reduced race-wise accuracy disparity
+This confirmed that the approach generalizes beyond a single dataset.
+So as this was jsut to check the best method , i did 2 things cleaned the images dataset picked up randomely the top 50K images from the 1 lakh avable , then renamed the images into gender and and race accordingle then ran the baseline FL to see what overall accuracy came out to be then on the fair face tried the dynamic client thing Total images: 50000 Round 1/10 completed Round 2/10 completed Round 3/10 completed Round 4/10 completed Round 5/10 completed Round 6/10 completed Round 7/10 completed Round 8/10 completed Round 9/10 completed Round 10/10 completed
+🔥 FINAL RESULTS Overall Accuracy: 0.7723
+Race-wise Accuracy: Race 0: 0.7645 Race 1: 0.7226 Race 2: 0.7373 Race 3: 0.8056 Race 4: 0.8145 Race 5: 0.8218 Race 6: 0.7469
+⚖️ Fairness Gap: 0.0992
+Device: cuda Total images: 50000 Fairness Clients: {0, 1, 4, 9} Round 1 completed Round 2 completed Round 3 completed Round 4 completed Round 5 completed Round 6 completed Round 7 completed Round 8 completed Round 9 completed Round 10 completed
+Avg acc: 77.9
+🔥 Race-wise Accuracy: White : 0.757 Black : 0.734 East Asian : 0.754 Indian : 0.812 Latino_Hispanic : 0.822 Middle Eastern : 0.813 Southeast Asian : 0.765
+⚖️ Fairness Gap: 0.088
+Device: cuda Total images: 50000 Fairness Clients: {0, 1, 4, 6, 9} Round 1 completed Round 2 completed Round 3 completed Round 4 completed Round 5 completed Round 6 completed Round 7 completed Round 8 completed Round 9 completed Round 10 completed
+Avg Acc: 76.95
+🔥 Race-wise Accuracy: White : 0.756 Black : 0.728 East Asian : 0.735 Indian : 0.801 Latino_Hispanic : 0.814 Middle Eastern : 0.799 Southeast Asian : 0.754
+⚖️ Fairness Gap: 0.0858
+Fairness Clients: {0, 1, 4, 5, 6, 9} Round 1 completed Round 2 completed Round 3 completed Round 4 completed Round 5 completed Round 6 completed Round 7 completed Round 8 completed Round 9 completed Round 10 completed
+🔥 Race-wise Accuracy: White : 0.748 Black : 0.727 East Asian : 0.728 Indian : 0.796 Latino_Hispanic : 0.807 Middle Eastern : 0.808 Southeast Asian : 0.757
+⚖️ Fairness Gap: 0.0812
+Final Conclusion Federated Learning models can exhibit significant fairness issues Many standard fairness techniques may fail or degrade performance in FL settings The proposed method: Dynamic Client-Adaptive Fairness Weighting (DCA-FW) Achieves a good balance between: Fairness improvement Accuracy preservation
+This demonstrates that client-level adaptations in FL can be an effective way to address bias in decentralized learning systems.
+
