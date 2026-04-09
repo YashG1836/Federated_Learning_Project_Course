@@ -1,0 +1,84 @@
+Device: cuda
+Total images: 50000
+Fairness Clients: {0, 1, 4, 9}
+Round 1 completed
+Round 2 completed
+Round 3 completed
+Round 4 completed
+Round 5 completed
+Round 6 completed
+Round 7 completed
+Round 8 completed
+Round 9 completed
+Round 10 completed
+
+
+Avg acc: 77.9
+
+🔥 Race-wise Accuracy:
+White : 0.757
+Black : 0.734
+East Asian : 0.754
+Indian : 0.812
+Latino_Hispanic : 0.822
+Middle Eastern : 0.813
+Southeast Asian : 0.765
+
+⚖️ Fairness Gap: 0.088
+
+
+
+
+
+
+Device: cuda
+Total images: 50000
+Fairness Clients: {0, 1, 4, 6, 9}
+Round 1 completed
+Round 2 completed
+Round 3 completed
+Round 4 completed
+Round 5 completed
+Round 6 completed
+Round 7 completed
+Round 8 completed
+Round 9 completed
+Round 10 completed
+
+Avg Acc: 76.95
+
+🔥 Race-wise Accuracy:
+White : 0.756
+Black : 0.728
+East Asian : 0.735
+Indian : 0.801
+Latino_Hispanic : 0.814
+Middle Eastern : 0.799
+Southeast Asian : 0.754
+
+⚖️ Fairness Gap: 0.0858
+
+
+Fairness Clients: {0, 1, 4, 5, 6, 9}
+Round 1 completed
+Round 2 completed
+Round 3 completed
+Round 4 completed
+Round 5 completed
+Round 6 completed
+Round 7 completed
+Round 8 completed
+Round 9 completed
+Round 10 completed
+
+🔥 Race-wise Accuracy:
+White : 0.748
+Black : 0.727
+East Asian : 0.728
+Indian : 0.796
+Latino_Hispanic : 0.807
+Middle Eastern : 0.808
+Southeast Asian : 0.757
+
+⚖️ Fairness Gap: 0.0812
+

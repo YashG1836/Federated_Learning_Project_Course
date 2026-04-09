@@ -1,0 +1,26 @@
+Device: cuda
+Fair clients: {0, 1, 4, 9}
+Round 1/10 completed
+Round 2/10 completed
+Round 3/10 completed
+Round 4/10 completed
+Round 5/10 completed
+Round 6/10 completed
+Round 7/10 completed
+Round 8/10 completed
+Round 9/10 completed
+Round 10/10 completed
+
+🔥 FINAL RESULTS
+Overall Accuracy: 0.7667
+
+Race-wise Accuracy:
+Race 0: 0.7604
+Race 1: 0.7184
+Race 2: 0.7248
+Race 3: 0.8092
+Race 4: 0.8030
+Race 5: 0.8126
+Race 6: 0.7452
+
+⚖️ Fairness Gap: 0.0941
