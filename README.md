@@ -27,21 +27,21 @@ Approximate summary results from project notes:
 
 ## Most Important Files for further use:
 1) For UTK Face:
-Code and Results (Baseline):  Utk_Face_Working\UTK_Face_implementation(2).ipynb
-Code and Results (After Fairness): Utk_Face_Working\Dynamic_Client_Adaptive_Fairness_Weighting(6).ipynb
+- Code and Results (Baseline):  Utk_Face_Working\UTK_Face_implementation(2).ipynb
+- Code and Results (After Fairness): Utk_Face_Working\Dynamic_Client_Adaptive_Fairness_Weighting(6).ipynb
 
 2) For Fair Face:
-Baseline:
-Code : FairFace_working\baseline_fairface.py 
-Results : FairFace_working\baseline_fairface_results
-After Fairness : 
-Code : FairFace_working\dynamic_weighting.py
-Results : FairFace_working\dynamic_weighting
+- Baseline:
+- Code : FairFace_working\baseline_fairface.py 
+- Results : FairFace_working\baseline_fairface_results
+- After Fairness : 
+- Code : FairFace_working\dynamic_weighting.py
+- Results : FairFace_working\dynamic_weighting
 
 ## Overall Results and Summary :
-Results (Exact Values) : Overall_Results.txt
-Project Summary (Quick Overview of the project): Refined_Summary.txt
-Elaborated Summary (Everything logic explained) : Elaborated_summary.txt
-Main Report (pdf) : Federated_Learning_Elaborated.pdf
-FL Attacks and Defence (Reference Research Paper) : Attacks_and_Defence_FL.pdf
+- Results (Exact Values) : Overall_Results.txt
+- Project Summary (Quick Overview of the project): Refined_Summary.txt
+- Elaborated Summary (Everything logic explained) : Elaborated_summary.txt
+- Main Report (pdf) : Federated_Learning_Elaborated.pdf
+- FL Attacks and Defence (Reference Research Paper) : Attacks_and_Defence_FL.pdf
 
