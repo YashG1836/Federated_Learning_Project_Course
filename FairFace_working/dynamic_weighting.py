@@ -236,8 +236,8 @@ def run_fl():
 # ================= RUN =================
 acc = run_fl()
 
-print("\n🔥 Race-wise Accuracy:")
+print("\nRace-wise Accuracy:")
 for r,a in acc.items():
     print(RACE_MAP[r], ":", round(a,3))
 
-print("\n⚖️ Fairness Gap:", round(gap(acc),4))
+print("\nFairness Gap:", round(gap(acc),4))

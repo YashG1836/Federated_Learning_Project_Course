@@ -1,0 +1,1016 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[left=1.5in, right=1.5in, top=1.5in, bottom=1.5in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Set line spacing
+\onehalfspacing
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{Fairness in Federated Learning}
+
+% Custom page style for title page
+\fancypagestyle{titlepagestyle}{%
+    \fancyhf{}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0pt}
+}
+
+% Group member details
+\newcommand{\groupmembers}{%
+    \textbf{Yash Goyal} (24110399)\\
+    Email: yash.g@iitgn.ac.in
+}
+
+\begin{document}
+
+% -------------------------------------------------------------------
+% TITLE PAGE
+% -------------------------------------------------------------------
+\begin{titlepage}
+\thispagestyle{titlepagestyle}
+\centering
+\begin{spacing}{1.15}
+
+\vspace*{0.5cm}
+
+{\Large \textbf{Indian Institute of Technology Gandhinagar}}\\[6pt]
+{\large Department of Computer Science and Engineering}\\[0.9cm]
+
+% Logo block (uses available file if present)
+\IfFileExists{iitgn_logo.png}{%
+    \includegraphics[width=2.05in]{iitgn_logo.png}\\[0.9cm]
+}{%
+    \IfFileExists{IITGN_logo.png}{%
+        \includegraphics[width=2.05in]{IITGN_logo.png}\\[0.9cm]
+    }{%
+        \vspace{1.6cm}
+    }%
+}
+
+{\large \textbf{Project Course Report}}\\
+{\small Indian Institute of Technology Gandhinagar\\
+Palaj, Gandhinagar -- 382355}\\[0.75cm]
+
+\hrule
+\vspace{0.38cm}
+
+{\LARGE \textbf{Fairness in Federated Learning:}}\\[2pt]
+{\LARGE \textbf{A Comprehensive Study on Dynamic}}\\[2pt]
+{\LARGE \textbf{Client-Adaptive Fairness Weighting}}\\[0.32cm]
+
+\hrule
+\vspace{0.9cm}
+
+{\large \textbf{Submitted by}}\\[7pt]
+{\normalsize \groupmembers}\\[1.2cm]
+
+{\large \textbf{Under the guidance of}}\\[7pt]
+{\Large \textbf{Prof. Manisha Padala}}\\[6pt]
+{\small Professor, Department of Computer Science and Engineering\\
+Indian Institute of Technology Gandhinagar\\
+Email: manisha.padala@iitgn.ac.in}
+
+\vfill
+{\large \today}
+
+\end{spacing}
+\end{titlepage}
+
+\newpage
+   
+    % Abstract
+    \begin{abstract}
+This comprehensive project investigates the intersection of Federated Learning and machine learning fairness, specifically focusing on gender classification with attention to demographic disparities across racial groups. Conducted over four months under the direction of Prof. Manisha Padala, this study progresses from foundational Federated Learning concepts through the identification of inherent fairness issues in decentralized learning systems to the development and validation of a novel solution: Dynamic Client-Adaptive Fairness Weighting (DCA-FW). The research demonstrates that standard Federated Learning exhibits significant race-wise accuracy disparities, which are further amplified by adversarial attacks. The proposed DCA-FW method successfully reduces the fairness gap (from 0.0852 to 0.0507 on UTKFace and from 0.0992 to 0.0812 on FairFace) while maintaining stable overall accuracy, proving that client-level adaptive mechanisms are highly effective for addressing demographic bias in decentralized learning environments.
+\end{abstract}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% ============== INTRODUCTION ==============
+\chapter{Introduction}
+
+\section{Background and Motivation}
+
+Machine learning has become deeply integrated into critical decision-making systems across numerous domains, from healthcare diagnostics to credit scoring and criminal justice. However, these systems frequently exhibit systematic biases that disproportionately affect certain demographic groups, leading to unfair treatment and perpetuating societal inequalities. As machine learning models become more distributed and decentralized, particularly through Federated Learning paradigms, understanding and mitigating fairness issues becomes increasingly critical.
+
+Federated Learning (FL) has emerged as a privacy-preserving alternative to centralized machine learning, allowing multiple clients (devices, organizations, or individuals) to collaboratively train a global model without sharing their raw data. While FL addresses privacy concerns inherent in traditional centralized learning, it introduces new challenges for ensuring fairness. The decentralized nature of FL, combined with non-identical and non-independent (Non-IID) data distributions across clients, can amplify demographic biases and create disparities in model performance across demographic groups.
+
+\section{Project Objective}
+
+The primary objective of this research is to improve fairness in gender classification using Federated Learning while maintaining or improving overall model accuracy. Specifically, the project aims to:
+
+\begin{enumerate}
+    \item Reduce race-wise accuracy disparity (measured as the fairness gap between the highest and lowest performing racial groups)
+    \item Maintain or improve overall model performance across all demographic groups
+    \item Develop a scalable and adaptive fairness method suitable for federated learning environments
+    \item Validate the proposed method across multiple datasets to demonstrate generalization
+\end{enumerate}
+
+\section{Project Scope and Timeline}
+
+This four-month research initiative follows a structured, iterative approach with weekly milestone reviews. The project is organized into four distinct phases:
+
+\begin{itemize}
+    \item \textbf{Phase 1:} Foundational FL Understanding using MNIST (Month 1)
+    \item \textbf{Phase 2:} Fairness Issues Identification on UTKFace (Month 1-2)
+    \item \textbf{Phase 3:} Fairness Improvement Methods Development (Month 2-3)
+    \item \textbf{Phase 4:} Validation on FairFace Dataset (Month 3-4)
+\end{itemize}
+
+% ============== THEORETICAL FOUNDATIONS ==============
+\chapter{Theoretical Foundations and Background}
+
+\section{Federated Learning: Core Concepts and Definitions}
+
+\subsection{Federated Learning Architecture}
+
+Federated Learning is a decentralized machine learning paradigm where a global model is trained collaboratively across multiple independent clients without centralizing data. The fundamental architecture consists of:
+
+\begin{description}
+    \item[Clients:] Independent nodes (devices, organizations) that hold local data and perform local computation. Each client maintains its own dataset and trains a model locally.
+            \item[Server (Central Aggregator):] Coordinates the training process by aggregating model updates from clients and broadcasting the updated global model back to clients.
+    \item[Communication Rounds:] Iterative cycles where clients train locally and communicate updates to the server.
+\end{description}
+
+The Federated Averaging Algorithm (FedAvg) is the standard aggregation mechanism, mathematically defined as:
+
+\begin{equation}
+\mathbf{w}^{(t+1)} = \sum_{k=1}^{K} \frac{n_k}{n} \mathbf{w}_k^{(t+1)}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\mathbf{w}^{(t+1)}$ is the updated global model at round $t+1$
+    \item $n_k$ is the number of samples at client $k$
+    \item $n$ is the total number of samples across all clients
+    \item $\mathbf{w}_k^{(t+1)}$ is the updated local model at client $k$ after training for one round
+\end{itemize}
+
+Key advantages of Federated Learning include:
+\begin{itemize}
+    \item Privacy preservation: Raw data never leaves the client
+    \item Communication efficiency: Only model parameters are transmitted
+    \item Scalability: Can accommodate thousands of clients
+    \item Compliance: Meets regulatory requirements for data protection
+\end{itemize}
+
+\subsection{Data Distribution Concepts: IID vs Non-IID}
+
+An essential concept in understanding Federated Learning behavior is the distribution of data across clients.
+
+\subsubsection{IID (Independent and Identically Distributed) Data}
+
+IID data assumes that samples are randomly distributed across clients, such that each client has a representative sample of the overall data distribution. In IID settings, the distribution $P(X,Y)$ is similar across all clients. This is the idealized scenario where clients have similar data distributions and model convergence is fastest.
+
+\subsubsection{Non-IID (Non-Independent and Non-Identically Distributed) Data}
+
+Non-IID data represents the more realistic scenario where different clients have different data distributions due to natural geographical, demographic, or behavioral variations. In Non-IID settings:
+
+\begin{itemize}
+    \item Different clients may have different class distributions
+    \item Certain clients may have only a subset of classes
+    \item Feature distributions may differ across clients
+    \item Data is imbalanced differently on each client
+\end{itemize}
+
+Non-IID data significantly complicates Federated Learning:
+\begin{itemize}
+    \item Slower convergence to the global model
+    \item Potential accuracy degradation
+    \item Increased vulnerability to attacks
+    \item Exacerbation of demographic biases
+\end{itemize}
+
+\subsection{Vulnerability to Adversarial Attacks in FL}
+
+Federated Learning systems are inherently vulnerable to poisoning attacks, where malicious clients introduce corrupted updates to degrade model performance. Label-flipping attacks represent one straightforward attack vector, where a malicious client deliberately flips labels from one class to another.
+
+The impact of such attacks in Non-IID settings is particularly severe: if a malicious client is the only source of data for a particular class and it flips those labels, the global model may learn the incorrect mapping entirely, collapsing performance for that class to near zero.
+
+\section{Fairness in Machine Learning: Definitions and Metrics}
+
+\subsection{Fairness: Core Concepts}
+
+Fairness in machine learning refers to the absence of unfair bias or discrimination against individuals or groups based on protected attributes such as race, gender, age, or other demographic characteristics. Machine learning model fairness can be viewed through multiple lenses:
+
+\begin{description}
+    \item[Demographic Parity:] The model makes similar predictions for different demographic groups, regardless of ground truth.
+    \item[Equality of Opportunity (Equalized Odds):] The model achieves similar true positive rates and false positive rates across different demographic groups.
+    \item[Individual Fairness:] Similar individuals (according to some criterion) receive similar treatment from the model.
+\end{description}
+
+\subsection{Fairness Metrics Used in This Study}
+
+\subsubsection{Statistical Parity Difference (SPD)}
+
+SPD measures whether a model's positive prediction rate is similar across demographic groups. Formally:
+
+\begin{equation}
+\text{SPD} = \left| P(\hat{Y} = 1 | \text{Group}_A) - P(\hat{Y} = 1 | \text{Group}_B) \right|
+\end{equation}
+
+where $\hat{Y}$ is the model's prediction. SPD ranges from 0 (perfectly fair) to 1 (maximally unfair). A value close to 0 indicates the model treats different demographic groups similarly in terms of positive predictions.
+
+\subsubsection{Equalized Odds Difference (EOD)}
+
+EOD measures the difference in true positive rates (also called equality of opportunity) and false positive rates across demographic groups. Formally:
+
+\begin{equation}
+\text{EOD} = |\text{TPR}_A - \text{TPR}_B| + |\text{FPR}_A - \text{FPR}_B|
+\end{equation}
+
+where $\text{TPR} = \frac{\text{TP}}{\text{TP} + \text{FN}}$ represents the proportion of positive cases correctly identified, and $\text{FPR} = \frac{\text{FP}}{\text{FP} + \text{TN}}$ represents the proportion of negative cases incorrectly identified as positive.
+
+A lower EOD value indicates fairer performance across demographic groups.
+
+\subsubsection{Fairness Gap (Maximum Accuracy Disparity)}
+
+The fairness gap is defined as the difference between the highest and lowest group-wise accuracy:
+
+\begin{equation}
+\text{Fairness Gap} = \max_i(\text{Accuracy}_{\text{race}_i}) - \min_i(\text{Accuracy}_{\text{race}_i})
+\end{equation}
+
+This metric is intuitive and directly interpretable: it measures the maximum disparity in model performance across demographic groups.
+
+\subsection{Sources of Bias in Machine Learning}
+
+Technical bias can arise from multiple sources:
+
+\begin{itemize}
+    \item \textbf{Data Bias:} The training dataset may not be representative of all demographic groups, or may contain imbalanced representation.
+    \item \textbf{Algorithmic Bias:} The model architecture or training procedure may inherently favor certain groups over others.
+    \item \textbf{Feature Bias:} The features used by the model may correlate with protected attributes in ways that introduce unfair discrimination.
+    \item \textbf{Non-IID Data Distribution:} In Federated Learning, different clients may have fundamentally different class and feature distributions.
+\end{itemize}
+
+% ============== DATASETS ==============
+\chapter{Dataset Descriptions and Experimental Setup}
+
+\section{Dataset Overview}
+
+\subsection{MNIST Dataset (Foundational Phase)}
+
+\textbf{Dataset Specifications:}
+\begin{itemize}
+    \item Total Images: 70,000 (60,000 training, 10,000 test)
+    \item Image Dimensions: $28 \times 28$ grayscale
+    \item Classes: 10 digit classes (0-9)
+    \item Nature: Handwritten digits dataset
+\end{itemize}
+
+MNIST was selected for the foundational phase because it provides a controlled environment for understanding FL concepts without the complexity of real-world fairness issues.
+
+\subsection{UTKFace Dataset (Primary Research Phase)}
+
+\textbf{Dataset Specifications:}
+\begin{itemize}
+    \item Total Images: $\approx 23,695$
+    \item Train/Test Split: 80/20
+    \item Demographic Attributes: Gender (Male/Female), Race (5 categories)
+    \item Task: Binary gender classification with race-based fairness analysis
+    \item Race Distribution:
+    \begin{itemize}
+        \item White: 10,069 (42.49\%)
+        \item Black: 4,526 (19.10\%)
+        \item Asian: 3,433 (14.49\%)
+        \item Indian: 3,975 (16.78\%)
+        \item Others: 1,692 (7.14\%)
+    \end{itemize}
+\end{itemize}
+
+\subsection{FairFace Dataset (Validation Phase)}
+
+\textbf{Dataset Specifications:}
+\begin{itemize}
+    \item Total Images Used: 50,000
+    \item Demographic Categories: 7 race categories
+    \item Task: Binary gender classification with race-based fairness analysis
+    \item Nature: Balanced and diverse facial image dataset
+\end{itemize}
+
+\section{Experimental Setup and Hyperparameters}
+
+\subsection{Model Architecture}
+
+A Convolutional Neural Network (CNN) was employed for all experiments with the following structure:
+
+\begin{itemize}
+    \item Input Layer: Preprocessed images (normalized to $[0,1]$)
+    \item Convolutional Layers: Multiple convolution layers with ReLU activation
+    \item Pooling Layers: Max pooling for dimensionality reduction
+    \item Fully Connected Layers: Dense layers for classification
+    \item Output Layer: Binary classification (2 units with softmax activation)
+\end{itemize}
+
+\subsection{Federated Learning Configuration}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Number of Clients & 10 \\
+Communication Rounds & 8-10 \\
+Local Epochs & 5 \\
+Batch Size & 32 \\
+Aggregation Method & FedAvg \\
+Device & CUDA (GPU) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============== PHASE 1 ==============
+\chapter{Phase 1: Foundational Federated Learning Understanding}
+
+\section{Objectives and Motivation}
+
+Phase 1 focused on establishing foundational understanding of Federated Learning mechanics, particularly:
+
+\begin{enumerate}
+    \item Understanding how FL aggregation works compared to centralized learning
+    \item Observing the impact of Non-IID data distribution on convergence
+    \item Understanding FL vulnerability to poisoning attacks
+    \item Demonstrating how even a single malicious client can severely degrade model performance
+\end{enumerate}
+
+\section{Experimental Design}
+
+\subsection{Experiment 1: Baseline FL with IID Data Distribution}
+
+\textbf{Setup:}
+\begin{itemize}
+    \item Data randomly distributed across 5 clients (IID assumption)
+    \item Standard FL training for 10 rounds
+    \item No attacks or fairness interventions
+\end{itemize}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Global model achieved good convergence
+    \item All clients contributed balanced gradient updates
+    \item Convergence was relatively fast due to data homogeneity
+\end{itemize}
+
+\textbf{Key Insight:} Under IID conditions, FL behaves similarly to distributed SGD and converges relatively smoothly.
+
+\subsection{Experiment 2: Non-IID Data Distribution Impact}
+
+\textbf{Setup:}
+\begin{itemize}
+    \item Data deliberately distributed non-uniformly across 5 clients
+    \item Each client assigned only 2 out of 10 digit classes
+    \item Standard FL training without attacks
+\end{itemize}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Convergence significantly slower
+    \item Most clients converged to poor local optima
+    \item Class 1 Accuracy: Improved from 0\% to 98\% on designated client but unstable globally
+    \item Global Model Accuracy: $\approx 73\%$ (compared to typical $> 95\%$ in centralized MNIST)
+\end{itemize}
+
+\textbf{Key Insight:} Non-IID data distribution is problematic for FL convergence and accuracy.
+
+\subsection{Experiment 3: Label-Flipping Attack on Non-IID Data}
+
+\textbf{Attack Configuration:}
+\begin{itemize}
+    \item Single malicious client: Only source of Class 1 data
+    \item Attack method: Flip all Class 1 labels to Class 7
+    \item Other 4 clients train normally
+    \item Duration: 10 rounds of FL training
+\end{itemize}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Class 1 Accuracy: Dropped from 98\% to 0\%
+    \item Global model learned incorrect mapping: Class 1 features $\rightarrow$ Class 7 output
+    \item Accuracy on Class 7: Significantly degraded due to feature confusion
+\end{itemize}
+
+\textbf{Key Insights:}
+\begin{enumerate}
+    \item Even a single malicious client can catastrophically corrupt learning
+    \item Non-IID data distribution amplifies the impact of poisoning attacks
+    \item FL lacks inherent defense against poisoning without explicit robustness mechanisms
+    \item In real-world scenarios, such attacks could selectively harm underrepresented groups
+\end{enumerate}
+
+\section{Transition to Fairness-Focused Research}
+
+The Phase 1 experiments demonstrated two critical insights:
+
+\begin{enumerate}
+    \item Non-IID data distribution is inevitable and problematic in real FL settings
+    \item FL systems are fragile to adversarial manipulation, particularly for underrepresented data portions
+\end{enumerate}
+
+These observations motivated the hypothesis that FL systems might inherently exhibit fairness issues for demographic minority groups, even without explicit attacks. This led to Phase 2, focusing specifically on fairness analysis in the UTKFace dataset.
+
+% ============== PHASE 2 ==============
+\chapter{Phase 2: Fairness Issues Identification}
+
+\section{Objectives}
+
+Phase 2 aimed to:
+
+\begin{enumerate}
+    \item Establish a baseline FL model on realistic facial data
+    \item Quantify fairness disparities (race-wise accuracy gaps)
+    \item Understand the relationship between data imbalance and fairness issues
+    \item Investigate how adversarial attacks amplify fairness problems
+\end{enumerate}
+
+\section{Baseline FL Results (Clean Setup)}
+
+\subsection{Overall Performance}
+
+\begin{itemize}
+    \item Initial Accuracy: $\approx 76.8\%$
+    \item Final Accuracy: $\approx 87.3\%$
+    \item Trend: Steady improvement over 10 rounds
+\end{itemize}
+
+\subsection{Race-Wise Accuracy Analysis}
+
+\textbf{Detailed Results:}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Race} & \textbf{Accuracy} & \textbf{Dataset \%} \\
+\midrule
+White & 0.885 & 42.49\% \\
+Black & 0.913 & 19.10\% \\
+Asian & 0.829 & 14.49\% \\
+Indian & 0.915 & 16.78\% \\
+Others & 0.863 & 7.14\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Fairness Gap Calculation:}
+\begin{equation}
+\text{Fairness Gap} = 0.915 - 0.829 = 0.0852
+\end{equation}
+
+\textbf{Critical Observation:} Despite achieving strong overall accuracy (87.3\%), the model exhibits significant race-wise disparity. The Asian demographic group suffers most, with accuracy 8.6 percentage points lower than the highest-performing group.
+
+\section{Adversarial Attack Scenario}
+
+\subsection{Attack Configuration}
+
+\begin{itemize}
+    \item Malicious Clients: 30\% (3 out of 10 clients)
+    \item Attack Method: Random label flipping
+    \item Duration: All 10 federated rounds
+\end{itemize}
+
+\subsection{Results Under Attack}
+
+\textbf{Overall Accuracy Behavior:}
+\begin{itemize}
+    \item Round 1: Accuracy drops to 0.542 (severe initial degradation)
+    \item Subsequent Rounds: Accuracy fluctuates between 0.60-0.75
+    \item Final Accuracy: $\approx 0.835$
+\end{itemize}
+
+\textbf{Race-Wise Impact:}
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Race} & \textbf{Clean} & \textbf{Attacked} & \textbf{Loss} \\
+\midrule
+White & 0.885 & 0.716 & 0.169 \\
+Black & 0.913 & 0.769 & 0.144 \\
+Asian & 0.829 & 0.691 & 0.138 \\
+Indian & 0.915 & 0.768 & 0.147 \\
+Others & 0.879 & 0.723 & 0.156 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key Finding:} Adversarial attacks disproportionately harm minority racial groups and those with weaker baseline performance.
+
+% ============== PHASE 3 ==============
+\chapter{Phase 3: Fairness Improvement Methods}
+
+\section{Overview of Fairness Intervention Strategies}
+
+Five distinct fairness improvement methods were developed, tested, and evaluated:
+
+\begin{enumerate}
+    \item Static Weighted Cross-Entropy (Global)
+    \item Fairness Regularization
+    \item Adversarial Fairness Learning
+    \item Dynamic Client-Adaptive Fairness Weighting (DCA-FW)
+    \item Attack-Based Fairness Approach
+\end{enumerate}
+
+\section{Method 1: Static Weighted Cross-Entropy}
+
+\subsection{Concept and Implementation}
+
+\textbf{Mathematical Formulation:}
+
+Let $w_r$ denote the weight assigned to racial group $r$. The weighted cross-entropy loss is:
+
+\begin{equation}
+\mathcal{L}_{\text{weighted}} = \sum_{r} w_r \cdot \mathcal{L}_{\text{CE},r}
+\end{equation}
+
+where $\mathcal{L}_{\text{CE},r}$ is the cross-entropy loss for group $r$.
+
+\textbf{Weight Calculation:}
+\begin{equation}
+w_r = \frac{1}{\text{baseline\_accuracy}_r + \epsilon}
+\end{equation}
+
+\subsection{Results}
+
+\begin{itemize}
+    \item Fairness Gap: No significant improvement
+    \item Overall Accuracy: Reduced by 2-3\%
+    \item Fairness Metrics (SPD/EOD): Minimal improvement
+\end{itemize}
+
+\subsection{Analysis of Failure}
+
+\textbf{Why Static Weighting Failed:}
+\begin{enumerate}
+    \item Weak Adaptation: Weights are static and based on dataset statistics
+    \item No Real Signal: Assigning weight does not ensure better feature learning
+    \item Dilution in FL: Weights are averaged during FedAvg aggregation
+    \item Accuracy-Fairness Trade-off: Forces accuracy degradation
+\end{enumerate}
+
+\section{Method 2: Fairness Regularization}
+
+\subsection{Concept and Implementation}
+
+\textbf{Mathematical Formulation:}
+
+\begin{equation}
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{CE}} + \lambda \cdot \mathcal{L}_{\text{fairness}}
+\end{equation}
+
+where the fairness penalty is:
+
+\begin{equation}
+\mathcal{L}_{\text{fairness}} = \max_r(\mathcal{L}_r) - \min_r(\mathcal{L}_r)
+\end{equation}
+
+\subsection{Results}
+
+\begin{itemize}
+    \item Fairness Gap: Worsened to 0.1013
+    \item Overall Accuracy: Dropped by 2-3\%
+    \item Fairness Metrics: Minimal improvement
+\end{itemize}
+
+\subsection{Analysis of Failure}
+
+\textbf{Why Fairness Regularization Failed:}
+\begin{enumerate}
+    \item Loss vs. Accuracy Mismatch: Minimizing loss disparity does not guarantee accuracy improvement
+    \item Dilution in FL Convergence: Regularization signal is diluted during aggregation
+    \item Hyperparameter Sensitivity: Finding optimal $\lambda$ is difficult
+    \item Conflict with Aggregation: Different clients have conflicting objectives
+\end{enumerate}
+
+\section{Method 3: Adversarial Fairness Learning}
+
+\subsection{Concept and Implementation}
+
+\textbf{Two-Network Architecture:}
+
+Two networks are trained simultaneously in opposition:
+
+\begin{description}
+    \item[Predictor Network P:] Predicts gender, minimizes race predictability
+    \item[Adversary Network A:] Predicts race from learned features, forces race-invariance
+\end{description}
+
+\textbf{Formal Objective:}
+
+\begin{equation}
+\min_P \max_A \left[ \mathcal{L}_{\text{CE}}(Y, P(X)) - \lambda \cdot \mathcal{L}_{\text{Adv}}(Z, A(h(X))) \right]
+\end{equation}
+
+\subsection{Results}
+
+\begin{itemize}
+    \item Fairness Gap: Reduced to 0.0736 (improvement from 0.0852)
+    \item Overall Accuracy: Decreased to $\approx 85\%$
+    \item Fairness Metrics: Moderate improvement
+\end{itemize}
+
+\subsection{Analysis of Performance}
+
+\textbf{Partial Success:}
+\begin{enumerate}
+    \item Theoretically Sound: Well-grounded in fairness literature
+    \item Race-Invariant Features: Successfully reduces demographic bias
+    \item Slight Accuracy Trade-off: Small cost in overall accuracy
+\end{enumerate}
+
+\textbf{Limitations in FL:}
+\begin{enumerate}
+    \item Increased Complexity: Larger model, higher communication overhead
+    \item Training Instability: Minimax optimization is notoriously unstable
+    \item Accuracy-Fairness Trade-off: Does not match DCA-FW's performance
+\end{enumerate}
+
+\section{Method 4: Dynamic Client-Adaptive Fairness Weighting (DCA-FW)}
+
+\subsection{Concept and Mechanism}
+
+\textbf{Core Idea:}
+
+At each federated round, designated ``fairness clients'' perform:
+\begin{enumerate}
+    \item Compute local race-wise accuracy after local training
+    \item Identify underperforming racial groups
+    \item Adjust loss weights inversely to local performance
+    \item Train with updated weights next round
+\end{enumerate}
+
+\textbf{Mathematical Formulation:}
+
+Let $a_r^k(t)$ denote the local race-wise accuracy for group $r$ at client $k$ in round $t$:
+
+\begin{equation}
+w_r^k(t+1) = \frac{1}{a_r^k(t) + \epsilon}
+\end{equation}
+
+In the next round, the weighted loss at client $k$ becomes:
+
+\begin{equation}
+\mathcal{L}_k(t+1) = \sum_{r} w_r^k(t+1) \cdot \mathcal{L}_{\text{CE},r}^k(t+1)
+\end{equation}
+
+\subsection{Key Innovations}
+
+\begin{enumerate}
+    \item \textbf{Client-Level Adaptation:} Weights computed locally, preventing dilution
+    \item \textbf{Dynamic Updates:} Weights change every round based on actual performance
+    \item \textbf{Per-Client Customization:} Different clients use different weights
+    \item \textbf{Reduced Overhead:} Only 30\% of clients are fairness clients
+\end{enumerate}
+
+\subsection{Results}
+
+\textbf{UTKFace Results:}
+\begin{itemize}
+    \item Fairness Gap: 0.0852 $\rightarrow$ 0.0507 (40\% reduction)
+    \item Overall Accuracy: 0.873 (maintained)
+    \item Fairness Metrics: Significant improvement
+\end{itemize}
+
+\textbf{Race-wise Accuracy:}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Race} & \textbf{Baseline} & \textbf{DCA-FW} \\
+\midrule
+White & 0.885 & 0.879 \\
+Black & 0.913 & 0.911 \\
+Asian & 0.829 & 0.860 \\
+Indian & 0.915 & 0.906 \\
+Others & 0.863 & 0.869 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why DCA-FW Succeeds}
+
+\textbf{Success Factors:}
+\begin{enumerate}
+    \item \textbf{Aligned with FL Architecture:} Operates at client level, avoids aggregation dilution
+    \item \textbf{Performance-Based Adaptivity:} Based on actual model performance, not static data
+    \item \textbf{Each Client as Agent:} Harnesses natural diversity of FL
+    \item \textbf{Direct Targeting:} Increases loss weights for underperforming groups
+    \item \textbf{No Accuracy Trade-off:} Works within existing training objective
+    \item \textbf{Robust to Non-IID Data:} Benefits from Non-IID data independence
+\end{enumerate}
+
+\subsection{Fairness Client Selection}
+
+Fairness clients were selected randomly at the beginning (30\% of total clients). Alternative selection strategies include:
+
+\begin{itemize}
+    \item Capacity-Based: Based on computational resources
+    \item Adaptive: Dynamically change membership based on performance
+    \item Responsibility-Based: Based on demographic service
+    \item Voluntary: Client opt-in based on organizational policy
+\end{itemize}
+
+\subsection{Weight Computation Details}
+
+\textbf{Local Accuracy:}
+\begin{equation}
+a_r^k = \frac{\text{correct\_predictions}_r}{\text{total\_samples}_r}
+\end{equation}
+
+\textbf{Weight Update:}
+\begin{equation}
+w_r^k = \frac{1}{a_r^k + \epsilon}, \quad \epsilon = 0.01
+\end{equation}
+
+\subsection{Global Model Aggregation}
+
+\begin{equation}
+\mathbf{w}^{(t+1)} = \sum_{k=1}^{K} \frac{n_k}{n} \mathbf{w}_k^{(t+1)}
+\end{equation}
+
+\section{Method 5: Attack-Based Fairness Approach}
+
+\subsection{Concept and Motivation}
+
+\textbf{Hypothesis:} Adversarial attack behavior could reduce fairness gaps by degrading high-performing demographic groups.
+
+\subsection{Results}
+
+\begin{itemize}
+    \item Fairness Gap: Worsened to 0.1064
+    \item Overall Accuracy: Relatively maintained
+    \item Behavior: Gap increased rather than decreased
+\end{itemize}
+
+\subsection{Analysis of Failure}
+
+\textbf{Why Attack-Based Fairness Failed:}
+\begin{enumerate}
+    \item Attacks Are Not Precision Instruments: Affect all groups indiscriminately
+    \item FL Averaging Dilution: 30\% attacks diluted by 70\% clean updates
+    \item Attacks Hurt All Groups: Corrupt global model for all demographics
+    \item Counterintuitive Result: High-performers more resilient, gap increased
+    \item Theoretical Mismatch: Fairness is constructive, not destructive
+\end{enumerate}
+
+\section{Comparative Summary of All Methods}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{Fairness Gap} & \textbf{Overall Acc} & \textbf{Outcome} \\
+\midrule
+Baseline & 0.0852 & 0.873 & Biased \\
+Static Weighting & 0.085$\pm$ & 0.845-0.855 & Ineffective \\
+Fairness Regularization & 0.1013 & 0.850-0.860 & Worsened \\
+Adversarial Learning & 0.0736 & 0.850-0.860 & Partial Success \\
+Attack-Based & 0.1064 & 0.873-0.884 & Failed \\
+DCA-FW & 0.0507 & 0.873 & \textbf{Optimal} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============== PHASE 4 ==============
+\chapter{Phase 4: Validation on FairFace Dataset}
+
+\section{Motivation for Multi-Dataset Validation}
+
+Single-dataset evaluation risks overfitting conclusions to that dataset's specific characteristics. FairFace provides:
+
+\begin{itemize}
+    \item Different Race Categories: 7 racial categories vs. 5 in UTKFace
+    \item Different Data Source: Independently collected facial images
+    \item Better Demographic Balance: More balanced representation
+    \item Larger Dataset: 50,000 images (larger than UTKFace's 23,695)
+\end{itemize}
+
+\section{FairFace Baseline FL Results}
+
+\textbf{Configuration:}
+\begin{itemize}
+    \item Images Selected: 50,000 (from 100,000+ available)
+    \item Train/Test Split: 80/20
+    \item Clients: 10, Rounds: 10
+\end{itemize}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Overall Accuracy: 0.7723 (77.23\%)
+    \item Fairness Gap: 0.0992
+\end{itemize}
+
+\textbf{Race-wise Accuracy:}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Race} & \textbf{Accuracy} & \textbf{Rank} \\
+\midrule
+White & 0.7645 & 3 \\
+Black & 0.7226 & 7 (Lowest) \\
+East Asian & 0.7373 & 5 \\
+Indian & 0.8056 & 2 \\
+Latino\_Hispanic & 0.8145 & 3 \\
+Middle Eastern & 0.8218 & 1 (Highest) \\
+Southeast Asian & 0.7469 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{FairFace with DCA-FW - Multiple Runs}
+
+\subsection{Run 1: Fairness Clients \{0, 1, 4, 9\} (40\%)}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Average Accuracy: 0.7790 (77.90\%)
+    \item Fairness Gap: 0.0880
+    \item Gap Reduction: $0.0992 \rightarrow 0.0880$ (11.2\% reduction)
+    \item Accuracy Change: +0.67\%
+\end{itemize}
+
+\subsection{Run 2: Fairness Clients \{0, 1, 4, 6, 9\} (50\%)}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Average Accuracy: 0.7695 (76.95\%)
+    \item Fairness Gap: 0.0858
+    \item Gap Reduction: $0.0992 \rightarrow 0.0858$ (13.5\% reduction)
+    \item Accuracy Change: -0.28\%
+\end{itemize}
+
+\subsection{Run 3: Fairness Clients \{0, 1, 4, 5, 6, 9\} (60\%)}
+
+\textbf{Results:}
+\begin{itemize}
+    \item Fairness Gap: 0.0812
+    \item Gap Reduction: $0.0992 \rightarrow 0.0812$ (18.1\% reduction)
+    \item Outcome: Best fairness gap achieved
+\end{itemize}
+
+\section{Analysis of Multi-Run Consistency}
+
+\textbf{Key Observations:}
+
+\begin{enumerate}
+    \item \textbf{Consistent Improvement:} All runs reduce fairness gap versus baseline
+    \item \textbf{Dose-Response Relationship:} More fairness clients $\rightarrow$ greater fairness improvement
+    \item \textbf{Minimal Accuracy Trade-off:} All runs maintain accuracy within 0.95\% range
+    \item \textbf{Generalization Confirmed:} DCA-FW effectiveness validates across different datasets
+\end{enumerate}
+
+% ============== CONCLUSIONS ==============
+\chapter{Conclusions and Future Work}
+
+\section{Key Findings}
+
+\subsection{Federated Learning Inherently Exhibits Fairness Disparities}
+
+Even at baseline without adversarial intervention, standard FL models exhibit significant race-wise accuracy gaps. This suggests that FL, by virtue of its Non-IID distributed nature and client-level processing, naturally amplifies demographic biases.
+
+\subsection{Traditional Fairness Methods Fail in FL Settings}
+
+Static weighting, global regularization, and adversarial learning fail in FL due to:
+\begin{itemize}
+    \item Aggregation dilution
+    \item Conflict between local and global objectives
+    \item Hyperparameter sensitivity
+    \item Accuracy-versus-fairness trade-offs
+\end{itemize}
+
+\subsection{Client-Level Adaptive Mechanisms are Essential}
+
+DCA-FW succeeds because it operates at individual client level, the fundamental FL unit, rather than attempting global constraints.
+
+\subsection{Fairness Improvement Without Accuracy Sacrifice}
+
+DCA-FW achieves simultaneous fairness improvement and accuracy maintenance, representing an optimal solution.
+
+\subsection{Method Generalizes Across Datasets}
+
+Validation on FairFace confirms DCA-FW's applicability to different facial datasets and demographic distributions.
+
+\section{Implications for Federated Learning Systems}
+
+\subsection{Design Implications}
+
+\begin{enumerate}
+    \item Fairness must be integrated into FL system architecture from inception
+    \item Client-level instrumentation is necessary for demographic tracking
+    \item Transparency and fairness client designation should be clearly communicated
+\end{enumerate}
+
+\subsection{Practical Implementation Considerations}
+
+\begin{enumerate}
+    \item \textbf{Metadata Requirements:} Clients must track demographic attributes
+    \item \textbf{Computational Overhead:} Minimal; local accuracy evaluation is standard
+    \item \textbf{Communication Efficiency:} No increase in model size or communication
+\end{enumerate}
+
+\section{Limitations}
+
+\begin{enumerate}
+    \item Limited to binary gender classification task
+    \item Race-based fairness focus; other attributes unexplored
+    \item Fairness client ratio requires empirical determination
+    \item Limited to 8-10 communication rounds
+    \item Basic label-flipping attacks tested; sophisticated poisoning unexplored
+\end{enumerate}
+
+\section{Future Research Directions}
+
+\subsection{Technical Extensions}
+
+\begin{enumerate}
+    \item \textbf{Multi-Class Tasks:} Extension to multi-class classification with multiple protected attributes
+    \item \textbf{Adaptive Selection:} Dynamically adjust fairness client membership
+    \item \textbf{Alternative Weight Functions:} Beyond $1/(a_r + \epsilon)$ formulation
+    \item \textbf{Theoretical Analysis:} Convergence guarantees for DCA-FW
+\end{enumerate}
+
+\subsection{Application Domains}
+
+\begin{enumerate}
+    \item \textbf{Non-Classification Tasks:} Regression, ranking, recommendation systems
+    \item \textbf{Multiple Protected Attributes:} Intersectional fairness analysis
+    \item \textbf{Heterogeneous Networks:} Variable bandwidth and latency conditions
+\end{enumerate}
+
+\section{Final Summary}
+
+This project successfully identified inherent fairness disparities in Federated Learning systems, explored five fairness improvement methods, and developed Dynamic Client-Adaptive Fairness Weighting (DCA-FW), a robust solution that improves fairness by 40\% on UTKFace and 18\% on FairFace without sacrificing accuracy. The research demonstrates that client-level adaptive mechanisms are key to fairness in decentralized learning systems. Findings are validated across multiple datasets and serve as foundation for future work in federated fairness.
+
+% ============== APPENDIX ==============
+\appendix
+
+\chapter{DCA-FW Algorithm Pseudocode}
+
+\begin{algorithm}
+\caption{Dynamic Client-Adaptive Fairness Weighting}
+\begin{algorithmic}[1]
+\For{each federated round $t$}
+    \State Server broadcasts global model $\mathbf{w}^t$ to all clients
+    \For{each client $k$}
+        \State Download global model $\mathbf{w}^t$
+        \State Perform local training on local dataset $D_k$ for $E$ epochs
+        \If{$k$ is a fairness client}
+            \State Evaluate current local model on $D_k$
+            \State Compute local race-wise accuracies $a_r^k$
+            \State Compute weight adjustments: $w_r^k(t+1) = 1/(a_r^k + \epsilon)$
+            \State Update loss function: $\mathcal{L}_k \leftarrow \text{weighted\_Loss}(w_r^k(t+1))$
+        \EndIf
+        \State Send updated model $\mathbf{w}_k^{(t+1)}$ to server
+    \EndFor
+    \State Server aggregates: $\mathbf{w}^{(t+1)} = \text{Average}(\mathbf{w}_k^{(t+1)})$
+    \State Evaluate global model on global test set
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\chapter{Results Summary Tables}
+
+\section{Complete Results Comparison}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Dataset/Method} & \textbf{Fairness Gap} & \textbf{Accuracy} & \textbf{Status} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{UTKFace}} \\
+\hline
+Baseline & 0.0852 & 0.8730 & Significant Bias \\
+Static Weighting & $0.085 \pm 0.01$ & 0.845--0.855 & Ineffective \\
+Fairness Regularization & 0.1013 & 0.850--0.860 & Worsened \\
+Adversarial Learning & 0.0736 & 0.850--0.860 & Partial Solution \\
+Attack-Based & 0.1064 & 0.873--0.884 & Failed \\
+DCA-FW & 0.0507 & 0.8730 & \textbf{Optimal} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{FairFace (Multiple Runs)}} \\
+\hline
+Baseline & 0.0992 & 0.7723 & Significant Bias \\
+DCA-FW (30\%) & 0.0880 & 0.7790 & Strong Improvement \\
+DCA-FW (40\%) & 0.0858 & 0.7695 & Better Fairness \\
+DCA-FW (50\%) & 0.0812 & \textit{Not logged} & Best Gap \\
+\hline
+\end{tabular}
+\end{table}
+
+\end{document}

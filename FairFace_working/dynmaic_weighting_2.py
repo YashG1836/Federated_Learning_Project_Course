@@ -195,11 +195,11 @@ preds, labels, races = evaluate(global_model, test_loader)
 race_acc, gap = race_accuracy(preds, labels, races)
 overall_acc = (preds == labels).mean()
 
-print("\n🔥 FINAL RESULTS")
+print("\nFINAL RESULTS")
 print(f"Overall Accuracy: {overall_acc:.4f}")
 
 print("\nRace-wise Accuracy:")
 for r in race_acc:
     print(f"Race {r}: {race_acc[r]:.4f}")
 
-print(f"\n⚖️ Fairness Gap: {gap:.4f}")
+print(f"\nFairness Gap: {gap:.4f}")
