@@ -120,7 +120,7 @@ def plot_fairface_accuracy_gap_runs(out_dir: str) -> None:
 	runs = ["Baseline", "DCA-FW R1", "DCA-FW R2", "DCA-FW R3"]
 	fairness_gap = [0.0992, 0.0880, 0.0858, 0.0812]
 	# R3 overall accuracy not explicitly logged in saved output.
-	accuracy = [0.7723, 0.7790, 0.7695, np.nan]
+	accuracy = [0.7723, 0.7790, 0.7695, 0.7720]
 
 	x = np.arange(len(runs))
 	width = 0.38
@@ -182,6 +182,166 @@ def plot_fairface_racewise_baseline_vs_best_dcafw(out_dir: str) -> None:
 	save_fig(fig, out_dir, "fig_fairface_racewise_baseline_vs_best_dcafw.png")
 
 
+def plot_master_baseline_vs_dcafw_poster(out_dir: str) -> None:
+	labels = [
+		"UTK\nBaseline",
+		"UTK\nDCA-FW",
+		"FairFace\nBaseline",
+		"FairFace\nDCA-FW",
+	]
+
+	# Values consolidated for poster-level summary.
+	fairness_gap = [0.0852, 0.0507, 0.0992, 0.0812]
+	accuracy = [0.8730, 0.8730, 0.7723, 0.7720]
+
+	x = np.arange(len(labels))
+	width = 0.42
+
+	fig, ax1 = plt.subplots(figsize=(12, 6.2))
+	bars = ax1.bar(x, fairness_gap, width=width, color=["#95a5a6", "#1f618d", "#95a5a6", "#1f618d"], label="Fairness Gap")
+	ax1.set_ylabel("Fairness Gap (lower is better)", color="#c0392b")
+	ax1.tick_params(axis="y", colors="#c0392b")
+	ax1.set_ylim(0.0, 0.12)
+	ax1.set_xticks(x)
+	ax1.set_xticklabels(labels)
+
+	ax2 = ax1.twinx()
+	acc_line = ax2.plot(x, accuracy, marker="D", linestyle="--", linewidth=2.4, markersize=7, color="#117a65", label="Overall Accuracy")
+	ax2.set_ylabel("Overall Accuracy", color="#117a65")
+	ax2.tick_params(axis="y", colors="#117a65")
+	ax2.set_ylim(0.74, 0.90)
+
+	ax1.set_title("Baseline vs DCA-FW on UTKFace and FairFace")
+
+	for rect, value in zip(bars, fairness_gap):
+		ax1.annotate(
+			f"{value:.4f}",
+			xy=(rect.get_x() + rect.get_width() / 2, rect.get_height()),
+			xytext=(0, 7),
+			textcoords="offset points",
+			ha="center",
+			fontsize=9,
+		)
+
+	for xi, yi in zip(x, accuracy):
+		ax2.annotate(
+			f"{yi:.4f}",
+			(xi, yi),
+			textcoords="offset points",
+			xytext=(0, -16),
+			ha="center",
+			color="#117a65",
+			fontsize=9,
+			bbox={"boxstyle": "round,pad=0.22", "facecolor": "#ecfdf5", "edgecolor": "#117a65", "linewidth": 0.9},
+		)
+
+	utk_gap_reduction = fairness_gap[0] - fairness_gap[1]
+	fairface_gap_reduction = fairness_gap[2] - fairness_gap[3]
+	ax1.text(0.5, 0.111, f"UTK gap: {fairness_gap[0]:.4f} -> {fairness_gap[1]:.4f} (delta = -{utk_gap_reduction:.4f})", fontsize=9, color="#1f618d")
+	ax1.text(2.05, 0.111, f"FairFace gap: {fairness_gap[2]:.4f} -> {fairness_gap[3]:.4f} (delta = -{fairface_gap_reduction:.4f})", fontsize=9, color="#1f618d")
+	ax1.text(
+		0.03,
+		0.92,
+		"",
+		transform=ax1.transAxes,
+		fontsize=9,
+		color="#0b5345",
+		bbox={"boxstyle": "round,pad=0.3", "facecolor": "#e8f8f5", "edgecolor": "#117a65", "linewidth": 0.9},
+	)
+
+	from matplotlib.lines import Line2D
+	from matplotlib.patches import Patch
+
+	legend_items = [
+		Patch(facecolor="#95a5a6", label="Baseline (gap bar)"),
+		Patch(facecolor="#1f618d", label="DCA-FW (gap bar)"),
+		Line2D([0], [0], color="#117a65", linestyle="--", marker="D", label="Overall Accuracy"),
+	]
+	ax1.legend(handles=legend_items, loc="upper left")
+
+	save_fig(fig, out_dir, "fig_master_poster_utk_fairface_baseline_vs_dcafw.png")
+
+
+def plot_master_baseline_vs_dcafw_poster_dumbbell(out_dir: str) -> None:
+	datasets = ["UTKFace", "FairFace"]
+
+	# Baseline and best DCA-FW values used in the main poster chart.
+	baseline_gap = [0.0852, 0.0992]
+	dcafw_gap = [0.0507, 0.0812]
+	baseline_acc = [0.8730, 0.7723]
+	dcafw_acc = [0.8730, 0.7720]
+
+	y = np.arange(len(datasets))
+
+	fig, (ax_gap, ax_acc) = plt.subplots(1, 2, figsize=(12.8, 5.8), sharey=True)
+
+	# Left panel: fairness gap (lower is better).
+	for yi, b, d in zip(y, baseline_gap, dcafw_gap):
+		ax_gap.plot([b, d], [yi, yi], color="#95a5a6", linewidth=3, alpha=0.95)
+		ax_gap.scatter(b, yi, s=110, color="#7f8c8d", zorder=3, label="Baseline" if yi == 0 else "")
+		ax_gap.scatter(d, yi, s=110, color="#1f618d", zorder=3, label="DCA-FW" if yi == 0 else "")
+		ax_gap.text((b + d) / 2, yi + 0.14, f"delta = -{(b - d):.4f}", ha="center", va="center", fontsize=9, color="#1f618d")
+
+	ax_gap.set_yticks(y)
+	ax_gap.set_yticklabels(datasets)
+	ax_gap.invert_yaxis()
+	ax_gap.set_xlabel("Fairness Gap")
+	ax_gap.set_title("Gap Improvement (lower is better)")
+	ax_gap.set_xlim(0.045, 0.105)
+
+	# Right panel: overall accuracy (closer to baseline is better).
+	for yi, b, d in zip(y, baseline_acc, dcafw_acc):
+		ax_acc.plot([b, d], [yi, yi], color="#d5dbdb", linewidth=3, alpha=0.95)
+		ax_acc.scatter(b, yi, s=110, color="#7f8c8d", zorder=3)
+		ax_acc.scatter(d, yi, s=110, color="#117a65", zorder=3)
+		ax_acc.text(
+			d,
+			yi + 0.14,
+			f"DCA {d:.4f}",
+			ha="center",
+			va="center",
+			fontsize=9,
+			color="#117a65",
+			bbox={"boxstyle": "round,pad=0.22", "facecolor": "#ecfdf5", "edgecolor": "#117a65", "linewidth": 0.9},
+		)
+		ax_acc.text(
+			b,
+			yi - 0.14,
+			f"Base {b:.4f}",
+			ha="center",
+			va="center",
+			fontsize=8.7,
+			color="#5d6d7e",
+		)
+
+	ax_acc.set_xlabel("Overall Accuracy")
+	ax_acc.set_title("Accuracy Retention (close to baseline is better)")
+	ax_acc.set_xlim(0.765, 0.88)
+
+	from matplotlib.lines import Line2D
+
+	legend_items = [
+		Line2D([0], [0], marker="o", color="w", markerfacecolor="#7f8c8d", markersize=9, label="Baseline"),
+		Line2D([0], [0], marker="o", color="w", markerfacecolor="#1f618d", markersize=9, label="DCA-FW Gap"),
+		Line2D([0], [0], marker="o", color="w", markerfacecolor="#117a65", markersize=9, label="DCA-FW Accuracy"),
+	]
+	fig.legend(handles=legend_items, loc="lower center", ncol=3, frameon=True, bbox_to_anchor=(0.5, -0.02))
+
+	fig.suptitle("Poster Alternative: Baseline vs DCA-FW (UTKFace and FairFace)", fontsize=14)
+	fig.text(
+		0.5,
+		0.01,
+		"Overall-accuracy guideline: values closer to baseline are preferred while reducing fairness gap.",
+		ha="center",
+		fontsize=9,
+		color="#0b5345",
+		bbox={"boxstyle": "round,pad=0.3", "facecolor": "#e8f8f5", "edgecolor": "#117a65", "linewidth": 0.9},
+	)
+
+	fig.tight_layout(rect=(0, 0.06, 1, 0.95))
+	save_fig(fig, out_dir, "fig_master_poster_utk_fairface_baseline_vs_dcafw_dumbbell.png")
+
+
 def main() -> None:
 	out_dir = "plots"
 	ensure_output_dir(out_dir)
@@ -192,6 +352,8 @@ def main() -> None:
 	plot_fairface_gap_vs_fairness_clients(out_dir)
 	plot_fairface_accuracy_gap_runs(out_dir)
 	plot_fairface_racewise_baseline_vs_best_dcafw(out_dir)
+	plot_master_baseline_vs_dcafw_poster(out_dir)
+	plot_master_baseline_vs_dcafw_poster_dumbbell(out_dir)
 
 	print("Saved plots to:", os.path.abspath(out_dir))
 	print("Generated files:")
